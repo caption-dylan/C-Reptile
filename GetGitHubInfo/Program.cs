@@ -17,7 +17,7 @@ namespace GetGitHubInfo
             if (strPageSize != "")
             {
                 int pageSize = Convert.ToInt32(strPageSize);
-                int ran = r.Next(2, 8);
+                int ran = r.Next(2, 8);  //产生随机请求时间间隔
                 int sleepTime = 1000 * 60 * ran;
                 for (int i = 2; i <= pageSize; i++)
                 {
@@ -25,7 +25,7 @@ namespace GetGitHubInfo
                     
                     StopWatch sw = new StopWatch(Console.CursorLeft, Console.CursorTop, sleepTime);
                     sw.Start();
-                    System.Threading.Thread.Sleep(sleepTime);
+                    Thread.Sleep(sleepTime);
                     sw.finsh();
                     Console.WriteLine();
                     Console.WriteLine("当前I开始发送请求...，请稍候!:" + i);
@@ -36,15 +36,19 @@ namespace GetGitHubInfo
             }
         }
 
+        /// <summary>
+        /// 获取数据并保存
+        /// </summary>
+        /// <param name="index">当前第几页</param>
+        /// <param name="name">搜索的关键定</param>
+        /// <param name="isOne">是否是第一次请求，主要用于返回总页数</param>
+        /// <returns></returns>
         public static string Save(string index, string name, bool isOne = false)
         {
             //第一步声明HtmlAgilityPack.HtmlDocument实例
             HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
-            //获取Html页面代码
-            //string html = GetHttp("5","android");
             Dictionary<string, string> result = HttpGET(index, name);
-            string html = result["result"];
-            Console.WriteLine("html:" + html);
+            string html = result["result"];  //获取返回的html 标签
             //第二步加载html文档
             doc.LoadHtml(html);
             //获取总页数
@@ -58,7 +62,7 @@ namespace GetGitHubInfo
                 Console.WriteLine();
                 htmlnode = null;
             }
-            //获取所有板块的a标签
+            //获取对应ul下的所有li
             HtmlAgilityPack.HtmlNodeCollection collection = doc.DocumentNode.SelectNodes("//ul[@class='repo-list js-repo-list']/li");
             if (collection == null)
             {
@@ -117,17 +121,6 @@ namespace GetGitHubInfo
             result = null;
             collection = null;
             return strPageSize;
-        }
-
-        public static string GetHttp(string index, string name)
-        {
-            string str = "https://github.com/search?o=desc&p=" + index + "&q=" + name + "&ref=searchresults&s=stars&type=Repositories&utf8=%E2%9C%93";
-            WebClient MyWebClient = new WebClient();
-            MyWebClient.Credentials = CredentialCache.DefaultCredentials;//获取或设置用于向Internet资源的请求进行身份验证的网络凭据
-
-            Byte[] pageData = MyWebClient.DownloadData(str); //从指定网站下载数据
-            string pageHtml = Encoding.UTF8.GetString(pageData); //如果获取网站页面采用的是UTF-8，则使用这句
-            return pageHtml;
         }
         #region GET请求
         /// <summary>
@@ -216,9 +209,7 @@ namespace GetGitHubInfo
             return responseResult;
         }
         #endregion
-
-
-
+        #region 倒计时线程
         class StopWatch
         {
             private int Interval = 1000;              //时间间隔，单位毫秒
@@ -228,7 +219,7 @@ namespace GetGitHubInfo
             private Thread timer;
 
             public StopWatch() { }
-            public StopWatch(int left, int top,int time)
+            public StopWatch(int left, int top, int time)
             {
                 this.left = left;
                 this.top = top;
@@ -240,7 +231,7 @@ namespace GetGitHubInfo
                 timer = new Thread(new ThreadStart(Timer));  //新建一个线程，该线程调用Timer()
                 timer.Start();                               //启动线程
                 Console.CursorVisible = false;   //隐藏光标
-                
+
             }
             private void Timer()
             {
@@ -253,16 +244,18 @@ namespace GetGitHubInfo
             }
             private void Display()
             {
-                Console.SetCursorPosition(left,top);
-                Console.Write("剩余:[" + Time/1000 + "]秒");
+                Console.SetCursorPosition(left, top);
+                Console.Write("剩余:[" + Time / 1000 + "]秒");
             }
             public void finsh()
             {
-                if(timer!=null)
+                if (timer != null)
                     timer.Abort();                              //终止线程,用于停止秒表
                 Console.SetCursorPosition(left, top);
                 Console.Write("剩余:[0]秒");
             }
         }
+        #endregion
+
     }
 }
